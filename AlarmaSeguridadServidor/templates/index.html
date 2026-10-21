@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlarmaSeguridad</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 760px;
+            margin: 35px auto;
+            padding: 20px;
+            background: #f1f5f9;
+            color: #172033;
+        }
+        .panel {
+            background: white;
+            padding: 22px;
+            border-radius: 14px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 10px #00000012;
+        }
+        .estado { font-size: 24px; font-weight: bold; }
+        .alerta { color: #dc2626; }
+        .normal { color: #15803d; }
+        li { padding: 7px 0; }
+    </style>
+</head>
+<body>
+    <h1>Panel de seguridad</h1>
+
+    <section class="panel">
+        <h2>Estado de la alarma</h2>
+        <p id="alarma" class="estado">Conectando...</p>
+        <p id="alerta"></p>
+    </section>
+
+    <section class="panel">
+        <h2>Sensores</h2>
+        <p id="movimiento">Infrarrojo: esperando datos</p>
+        <p id="puerta">Magnético: esperando datos</p>
+    </section>
+
+    <section class="panel">
+        <h2>Historial de eventos</h2>
+        <ul id="eventos"></ul>
+    </section>
+
+    <script>
+        async function actualizar() {
+            try {
+                const respuesta = await fetch("/api/status");
+                if (!respuesta.ok) throw new Error("Error del servidor");
+
+                const datos = await respuesta.json();
+
+                document.getElementById("alarma").textContent =
+                    datos.alarma_activa ? "ALARMA ACTIVADA" : "ALARMA DESACTIVADA";
+
+                document.getElementById("alarma").className =
+                    "estado " + (datos.alarma_activa ? "normal" : "");
+
+                document.getElementById("alerta").textContent =
+                    datos.alerta ? "¡ALERTA DE SEGURIDAD!" : "Sin alertas activas";
+
+                document.getElementById("alerta").className =
+                    datos.alerta ? "alerta" : "normal";
+
+                document.getElementById("movimiento").textContent =
+                    "Infrarrojo: " +
+                    (datos.movimiento ? "Movimiento detectado" : "Sin movimiento");
+
+                document.getElementById("puerta").textContent =
+                    "Magnético: " +
+                    (datos.puerta_abierta ? "Puerta abierta" : "Puerta cerrada");
+
+                document.getElementById("eventos").innerHTML = "";
+
+                datos.eventos.forEach(evento => {
+                    const li = document.createElement("li");
+                    li.textContent = evento.hora + " — " + evento.mensaje;
+                    document.getElementById("eventos").appendChild(li);
+                });
+            } catch (error) {
+                document.getElementById("alarma").textContent =
+                    "Sin conexión con el servidor";
+            }
+        }
+
+        actualizar();
+        setInterval(actualizar, 1000);
+    </script>
+</body>
+</html>
